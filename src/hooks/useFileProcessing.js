@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { downloadFile } from "../utils/fileUtils";
-import { processFilesInBrowser } from "../utils/processOutFiles";
+import { generateExports } from "@/utils/generateExports";
+import { processOutFiles } from "@/utils/processOutFiles";
 
 export const useFileProcessing = (initialState) => {
   const [state, setState] = useState(initialState);
@@ -10,61 +11,71 @@ export const useFileProcessing = (initialState) => {
 
   const addLog = (message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
-    updateState({ logs: [...state.logs, { message, type, timestamp }] });
+    setState((prev) => ({
+      ...prev,
+      logs: [...prev.logs, { message, type, timestamp }],
+    }));
   };
 
   const toggleFormat = (format) => {
-    updateState({
-      selectedFormats: state.selectedFormats.includes(format)
-        ? state.selectedFormats.filter((f) => f !== format)
-        : [...state.selectedFormats, format],
-    });
+    setState((prev) => ({
+      ...prev,
+      selectedFormats: prev.selectedFormats.includes(format)
+        ? prev.selectedFormats.filter((f) => f !== format)
+        : [...prev.selectedFormats, format],
+    }));
   };
 
   const handleDownload = (format) => {
     if (!state.results) return;
 
+    const { exports, processedAirDensity } = state.results;
+
     switch (format) {
       case "csv":
         downloadFile(
-          state.results.individualSeedsCSV,
-          `all_seed_averages_${state.results.processedAirDensity}.csv`,
-          "csv",
+          exports.individualSeedsCSV,
+          `all_seed_averages_${processedAirDensity}.csv`,
+          "text/csv;charset=utf-8",
         );
         downloadFile(
-          state.results.powerCurveCSV,
-          `final_power_curve_${state.results.processedAirDensity}.csv`,
-          "csv",
+          exports.powerCurveCSV,
+          `final_power_curve_${processedAirDensity}.csv`,
+          "text/csv;charset=utf-8",
         );
-        addLog(`Downloaded CSV files`, "success");
+        addLog("Downloaded CSV files", "success");
         break;
 
       case "xlsx":
         downloadFile(
-          state.results.individualSeedsXLSX,
-          `all_seed_averages_${state.results.processedAirDensity}.xlsx`,
-          "xlsx",
+          exports.individualSeedsXLSX,
+          `all_seed_averages_${processedAirDensity}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         );
         downloadFile(
-          state.results.powerCurveXLSX,
-          `final_power_curve_${state.results.processedAirDensity}.xlsx`,
-          "xlsx",
+          exports.powerCurveXLSX,
+          `final_power_curve_${processedAirDensity}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         );
-        addLog(`Downloaded XLSX files`, "success");
+        addLog("Downloaded XLSX files", "success");
         break;
 
+      case "fw":
       case "fw.txt":
         downloadFile(
-          state.results.individualSeedsFW,
-          `all_seed_averages_${state.results.processedAirDensity}.fw.txt`,
-          "fw",
+          exports.individualSeedsFW,
+          `all_seed_averages_${processedAirDensity}.fw.txt`,
+          "text/plain;charset=utf-8",
         );
         downloadFile(
-          state.results.powerCurveFW,
-          `final_power_curve_${state.results.processedAirDensity}.fw.txt`,
-          "fw",
+          exports.powerCurveFW,
+          `final_power_curve_${processedAirDensity}.fw.txt`,
+          "text/plain;charset=utf-8",
         );
-        addLog(`Downloaded FW.TXT files`, "success");
+        addLog("Downloaded FW files", "success");
+        break;
+
+      default:
         break;
     }
   };
@@ -74,7 +85,8 @@ export const useFileProcessing = (initialState) => {
       file.name.toLowerCase().endsWith(".out"),
     );
 
-    updateState({
+    setState((prev) => ({
+      ...prev,
       files: outFiles,
       selectedFiles: [],
       activeFile: null,
@@ -83,19 +95,19 @@ export const useFileProcessing = (initialState) => {
       logs: [],
       progress: 0,
       currentStep: "",
-    });
+    }));
 
     addLog(`Loaded ${outFiles.length} .out files from folder`, "success");
   };
 
- const toggleFileSelection = (file) => {
-   updateState({
-     selectedFiles: state.selectedFiles.includes(file)
-       ? state.selectedFiles.filter((f) => f !== file)
-       : [...state.selectedFiles, file],
-   });
- };
-
+  const toggleFileSelection = (file) => {
+    setState((prev) => ({
+      ...prev,
+      selectedFiles: prev.selectedFiles.includes(file)
+        ? prev.selectedFiles.filter((f) => f !== file)
+        : [...prev.selectedFiles, file],
+    }));
+  };
 
   const handleProcessFiles = async () => {
     if (!state.selectedFiles.length) {
@@ -106,38 +118,63 @@ export const useFileProcessing = (initialState) => {
     try {
       updateState({
         processing: true,
-        progress: 10,
+        progress: 5,
         currentStep: "Reading files...",
         error: null,
       });
 
-      const { allFileResults, powerCurve } = await processFilesInBrowser(
+      addLog("Started processing files");
+
+      const result = await processOutFiles(
         state.selectedFiles,
+        state.airDensity,
+        (processed, total, percent, fileName) => {
+          updateState({
+            progress: percent,
+            currentStep: fileName || `Processing ${processed}/${total}`,
+          });
+        },
       );
 
       updateState({
-        progress: 80,
-        currentStep: "Finalizing results...",
+        progress: 85,
+        currentStep: "Generating export files...",
+      });
+
+      // Generate CSV / XLSX / FW from utility
+      const exports = generateExports({
+        allFileResults: result.allFileResults,
+        powerCurve: result.powerCurve,
+        processedAirDensity: state.airDensity,
       });
 
       updateState({
         results: {
-          individualSeeds: allFileResults,
-          powerCurve,
+          individualSeeds: result.allFileResults,
+          powerCurve: result.powerCurve,
+          stats: result.stats,
+          filesProcessed: result.filesProcessed,
+          globalRtAreaMean: result.globalRtAreaMean,
+          globalRtAreaMax: result.globalRtAreaMax,
+          processedAirDensity: state.airDensity,
+          exports,
         },
         processing: false,
         progress: 100,
         currentStep: "Complete",
       });
+
+      addLog("Processing completed successfully", "success");
     } catch (err) {
       updateState({
         error: err.message,
         processing: false,
         progress: 0,
       });
+
+      addLog(`Error: ${err.message}`, "error");
     }
   };
-
 
   return {
     state,

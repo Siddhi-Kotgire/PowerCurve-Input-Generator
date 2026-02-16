@@ -1,6 +1,11 @@
 import FormatDropdown from "./FormatDropdown";
 import { TableHeader, TableCell, StatCard } from "./common/Table";
 
+const formatNumber = (value, digits = 2) => {
+  if (typeof value !== "number" || isNaN(value)) return "-";
+  return value.toFixed(digits);
+};
+
 const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
   const renderConfigBanner = () => (
     <div className="bg-zinc-800/30 border border-zinc-700/50 rounded-lg p-4">
@@ -119,7 +124,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
                   className="hover:bg-zinc-700/30 transition-colors"
                 >
                   <TableCell bold>{row.windSpeed.toFixed(2)}</TableCell>
-                  <TableCell>{row.power.toFixed(2)}</TableCell>
+                  <TableCell>{formatNumber(row.Power, 2)}</TableCell>
                   <TableCell>{row.torque.toFixed(4)}</TableCell>
                   <TableCell>{row.genSpeed.toFixed(4)}</TableCell>
                   <TableCell>{row.cp.toFixed(6)}</TableCell>

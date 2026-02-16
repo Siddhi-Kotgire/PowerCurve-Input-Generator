@@ -1,7 +1,16 @@
 export const downloadFile = (data, filename, type) => {
   let blob;
+  const normalizedType = (type || "").toLowerCase();
+  const isXlsx =
+    normalizedType === "xlsx" ||
+    normalizedType.includes("spreadsheetml") ||
+    filename.toLowerCase().endsWith(".xlsx");
+  const isFixedWidth =
+    normalizedType === "fw" ||
+    normalizedType.includes("text/plain") ||
+    filename.toLowerCase().endsWith(".fw.txt");
 
-  if (type === "xlsx") {
+  if (isXlsx) {
     // Convert base64 to blob for XLSX
     const binaryString = window.atob(data);
     const bytes = new Uint8Array(binaryString.length);
@@ -11,7 +20,7 @@ export const downloadFile = (data, filename, type) => {
     blob = new Blob([bytes], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-  } else if (type === "fw") {
+  } else if (isFixedWidth) {
     blob = new Blob([data], { type: "text/plain" });
   } else {
     // CSV

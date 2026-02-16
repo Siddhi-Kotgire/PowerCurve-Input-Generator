@@ -1,7 +1,4 @@
-import * as XLSX from "xlsx";
-
-/* ================= COLUMN MAP ================= */
-
+// ===== COLUMN MAP =====
 const COLUMNS = {
   time: "Time",
   genPwr: "GenPwr",
@@ -19,24 +16,9 @@ const COLUMNS = {
   rtArea: "RtArea",
 };
 
-/* ================= CORE HELPERS ================= */
-
-function calculateMean(arr) {
-  if (!arr.length) return 0;
-  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
-}
-
-function getGroupKey(fileName) {
-  const lowerName = fileName.toLowerCase();
-  if (lowerName.includes("_seed")) {
-    return lowerName.split("_seed")[0];
-  }
-  return fileName.replace(/\.[^/.]+$/, "");
-}
-
+// ===== PARSE FILE =====
 function parseOutFile(fileContent) {
   const lines = fileContent.split("\n");
-
   let headerIdx = -1;
   let dataStartIdx = -1;
 
@@ -49,7 +31,7 @@ function parseOutFile(fileContent) {
   }
 
   if (headerIdx === -1) {
-    throw new Error("Header with Time column not found");
+    throw new Error("Could not find header row with Time column");
   }
 
   const headers = lines[headerIdx].trim().split(/\s+/);
@@ -70,18 +52,43 @@ function parseOutFile(fileContent) {
     data.push(row);
   }
 
-  return data;
+  return { headers, data };
 }
 
-/* ================= MAIN PROCESS FUNCTION ================= */
+// ===== UTIL =====
+function calculateMean(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+}
 
-export async function processFilesInBrowser(files) {
+function getGroupKey(fileName) {
+  const lowerName = fileName.toLowerCase();
+  if (lowerName.includes("_seed")) {
+    return lowerName.split("_seed")[0];
+  }
+  return fileName.replace(/\.[^/.]+$/, "");
+}
+
+// ===== MAIN PROCESSOR (BROWSER) =====
+export async function processOutFiles(
+  files,
+  airDensity = 1.225,
+  onProgress,
+) {
   const allFileResults = [];
+  const outFiles = files.filter((file) =>
+    file.name.toLowerCase().endsWith(".out"),
+  );
 
-  for (const file of files) {
+  if (!outFiles.length) {
+    throw new Error("No .out files uploaded");
+  }
+
+  for (let i = 0; i < outFiles.length; i++) {
+    const file = outFiles[i];
     try {
       const content = await file.text();
-      const data = parseOutFile(content);
+      const { data } = parseOutFile(content);
 
       if (!data.length) continue;
 
@@ -94,7 +101,7 @@ export async function processFilesInBrowser(files) {
       );
 
       const meanWindSpeed = calculateMean(windSpeeds);
-      if (meanWindSpeed === 0) continue;
+      if (!meanWindSpeed) continue;
 
       const result = {
         windSpeedGroup: getGroupKey(file.name),
@@ -118,8 +125,12 @@ export async function processFilesInBrowser(files) {
       };
 
       allFileResults.push(result);
+      if (onProgress) {
+        const percent = Math.round(((i + 1) / outFiles.length) * 80);
+        onProgress(i + 1, outFiles.length, percent, file.name);
+      }
     } catch (err) {
-      console.error("Error processing", file.name, err);
+      console.error("File processing error:", err);
     }
   }
 
@@ -127,21 +138,31 @@ export async function processFilesInBrowser(files) {
     throw new Error("No files processed");
   }
 
-  /* ========= GROUP POWER CURVE ========= */
+  // ===== GLOBAL STATS =====
+  const globalRtAreaMean = calculateMean(
+    allFileResults.map((r) => r["RtArea(m2)"]),
+  );
 
+  const globalRtAreaMax = Math.max(
+    ...allFileResults.map((r) => r["RtArea(m2)"]),
+  );
+
+  // ===== GROUPING =====
   const groups = {};
-  allFileResults.forEach((r) => {
-    if (!groups[r.windSpeedGroup]) groups[r.windSpeedGroup] = [];
-    groups[r.windSpeedGroup].push(r);
+  allFileResults.forEach((result) => {
+    if (!groups[result.windSpeedGroup]) {
+      groups[result.windSpeedGroup] = [];
+    }
+    groups[result.windSpeedGroup].push(result);
   });
 
   const powerCurve = Object.entries(groups).map(([group, results]) => {
-    const avgWindSpeed =
-      Math.round(calculateMean(results.map((r) => r.windSpeed)) * 2) / 2;
+    const avgWindSpeed = calculateMean(results.map((r) => r.windSpeed));
+    const roundedWindSpeed = Math.round(avgWindSpeed * 2) / 2;
 
     return {
       group,
-      windSpeed: avgWindSpeed,
+      windSpeed: roundedWindSpeed,
       power: calculateMean(results.map((r) => r.power)),
       torque: calculateMean(results.map((r) => r.torque)),
       genSpeed: calculateMean(results.map((r) => r.genSpeed)),
@@ -156,39 +177,29 @@ export async function processFilesInBrowser(files) {
 
   powerCurve.sort((a, b) => a.windSpeed - b.windSpeed);
 
-  return { allFileResults, powerCurve };
+  // Keep compatibility with UI that reads `row.Power`.
+  const powerCurveWithLegacyKeys = powerCurve.map((row) => ({
+    ...row,
+    Power: row.power,
+  }));
+
+  if (onProgress) {
+    onProgress(outFiles.length, outFiles.length, 100, "Complete");
+  }
+
+  return {
+    filesProcessed: allFileResults.length,
+    allFileResults,
+    powerCurve: powerCurveWithLegacyKeys,
+    results: allFileResults,
+    stats: {
+      globalRtAreaMean,
+      globalRtAreaMax,
+      filesProcessed: allFileResults.length,
+    },
+    globalRtAreaMean,
+    globalRtAreaMax,
+  };
 }
 
-/* ================= CSV DOWNLOAD ================= */
-
-export function downloadCSV(filename, data) {
-  const headers = Object.keys(data[0]).join(",");
-  const rows = data.map((row) =>
-    Object.values(row)
-      .map((v) => (typeof v === "number" ? v.toFixed(6) : v))
-      .join(","),
-  );
-
-  const csv = [headers, ...rows].join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
-
-/* ================= XLSX DOWNLOAD ================= */
-
-export function downloadXLSX(filename, data, sheetName) {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-  XLSX.writeFile(workbook, filename);
-}
+export const processFilesInBrowser = processOutFiles;

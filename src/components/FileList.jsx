@@ -102,9 +102,7 @@ const FileList = ({
                     onClick={() => {
                       const allSelected = selectedFiles.length === files.length;
                       updateState({
-                        selectedFiles: allSelected
-                          ? []
-                          :  files,
+                        selectedFiles: allSelected ? [] : files,
                       });
                       addLog(
                         allSelected
