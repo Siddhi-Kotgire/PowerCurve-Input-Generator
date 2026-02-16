@@ -10,6 +10,7 @@ import FileList from "../components/FileList";
 import ResultsView from "../components/ResultsView";
 import "../styles/globals.css";
 
+
 export default function Home() {
   const logsEndRef = useRef(null);
   const {

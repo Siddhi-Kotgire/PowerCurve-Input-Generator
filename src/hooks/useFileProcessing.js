@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { downloadFile } from "../utils/fileUtils";
+import { processFilesInBrowser } from "../utils/processOutFiles";
 
 export const useFileProcessing = (initialState) => {
   const [state, setState] = useState(initialState);
@@ -87,114 +88,56 @@ export const useFileProcessing = (initialState) => {
     addLog(`Loaded ${outFiles.length} .out files from folder`, "success");
   };
 
-  const toggleFileSelection = (fileName) => {
-    updateState({
-      selectedFiles: state.selectedFiles.includes(fileName)
-        ? state.selectedFiles.filter((f) => f !== fileName)
-        : [...state.selectedFiles, fileName],
-    });
-  };
+ const toggleFileSelection = (file) => {
+   updateState({
+     selectedFiles: state.selectedFiles.includes(file)
+       ? state.selectedFiles.filter((f) => f !== file)
+       : [...state.selectedFiles, file],
+   });
+ };
+
 
   const handleProcessFiles = async () => {
-    if (state.selectedFiles.length === 0) {
-      alert("Please select files to process");
+    if (!state.selectedFiles.length) {
+      updateState({ error: "No files selected" });
       return;
     }
 
-    updateState({
-      processing: true,
-      error: null,
-      results: null,
-      logs: [],
-      progress: 0,
-      showLogs: true,
-      sidebarCollapsed: true,
-    });
-
     try {
-      addLog(
-        `Starting processing of ${state.selectedFiles.length} files...`,
-        "info",
-      );
-      updateState({ currentStep: "Preparing files...", progress: 5 });
-
-      const formData = new FormData();
-      state.files.forEach((file) => {
-        if (state.selectedFiles.includes(file.name))
-          formData.append("files", file);
-      });
-
-      formData.append("airDensity", state.airDensity);
-      formData.append("rotorArea", state.rotorArea);
-
-      addLog(`Air Density: ${state.airDensity} kg/m³`, "info");
-      addLog(`Rotor Area: ${state.rotorArea} m²`, "info");
       updateState({
-        progress: 15,
-        currentStep: "Uploading and parsing files...",
+        processing: true,
+        progress: 10,
+        currentStep: "Reading files...",
+        error: null,
       });
 
-      const response = await fetch("/api/process", {
-        method: "POST",
-        body: formData,
-      });
-
-      updateState({ progress: 60, currentStep: "Processing data..." });
-      addLog(`Analyzing data and calculating averages...`, "info");
-
-      const data = await response.json();
-      updateState({ progress: 85 });
-
-      if (!response.ok) throw new Error(data.error || "Processing failed");
-
-      addLog(`Successfully processed ${data.filesProcessed} files`, "success");
-      addLog(
-        `Generated power curve with ${data.powerCurve.length} data points`,
-        "success",
+      const { allFileResults, powerCurve } = await processFilesInBrowser(
+        state.selectedFiles,
       );
 
-      if (data.globalRtAreaMean !== undefined) {
-        addLog(
-          `Global RtArea Mean: ${data.globalRtAreaMean.toFixed(4)} m²`,
-          "success",
-        );
-      }
-      if (data.globalRtAreaMax !== undefined) {
-        addLog(
-          `Global RtArea Max: ${data.globalRtAreaMax.toFixed(4)} m²`,
-          "success",
-        );
-      }
-
-      if (data.powerCurve.length > 0) {
-        const maxPower = Math.max(...data.powerCurve.map((r) => r.power));
-        const avgCp = (
-          data.powerCurve.reduce((sum, r) => sum + r.cp, 0) /
-          data.powerCurve.length
-        ).toFixed(4);
-        addLog(`Maximum power: ${maxPower.toFixed(2)} kW`, "success");
-        addLog(`Average Cp: ${avgCp}`, "success");
-      }
+      updateState({
+        progress: 80,
+        currentStep: "Finalizing results...",
+      });
 
       updateState({
         results: {
-          ...data,
-          processedAirDensity: state.airDensity,
-          processedRotorArea: state.rotorArea,
+          individualSeeds: allFileResults,
+          powerCurve,
         },
+        processing: false,
         progress: 100,
-        currentStep: "Complete!",
+        currentStep: "Complete",
       });
-
-      addLog(`Processing complete! Results ready for download.`, "success");
     } catch (err) {
-      updateState({ error: err.message, progress: 0, currentStep: "" });
-      addLog(`Error: ${err.message}`, "error");
-      console.error("Processing error:", err);
-    } finally {
-      setTimeout(() => updateState({ processing: false }), 500);
+      updateState({
+        error: err.message,
+        processing: false,
+        progress: 0,
+      });
     }
   };
+
 
   return {
     state,

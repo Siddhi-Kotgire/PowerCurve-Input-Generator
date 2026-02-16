@@ -12,7 +12,7 @@ const FileList = ({
   toggleFileSelection,
 }) => {
   const renderFileItem = (file, index) => {
-    const isSelected = selectedFiles.includes(file.name);
+    const isSelected = selectedFiles.some((f) => f.name === file.name);
     const isActive = activeFile?.name === file.name;
 
     return (
@@ -29,7 +29,7 @@ const FileList = ({
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={() => toggleFileSelection(file.name)}
+          onChange={() => toggleFileSelection(file)}
           className="w-4 h-4 text-emerald-500 bg-zinc-700 border-zinc-600 rounded focus:ring-emerald-500 focus:ring-offset-0 focus:ring-offset-zinc-900"
         />
 
@@ -104,7 +104,7 @@ const FileList = ({
                       updateState({
                         selectedFiles: allSelected
                           ? []
-                          : files.map((f) => f.name),
+                          :  files,
                       });
                       addLog(
                         allSelected
