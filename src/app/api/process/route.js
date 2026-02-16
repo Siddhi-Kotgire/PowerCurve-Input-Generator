@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import * as XLSX from "xlsx";
+
 
 // Column mappings matching the Python script
 const COLUMNS = {
