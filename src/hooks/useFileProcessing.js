@@ -14,6 +14,7 @@ export const useFileProcessing = (initialState) => {
     setState((prev) => ({
       ...prev,
       logs: [...prev.logs, { message, type, timestamp }],
+      showLogs: true,
     }));
   };
 

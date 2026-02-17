@@ -37,28 +37,22 @@ export default function Home() {
   /* Auto-hide logs panel after success */
   useEffect(() => {
     if (state.results && state.showLogs) {
-      const timer = setTimeout(
-        () => updateState({ showLogs: false }),
-        2500
-      );
+      const timer = setTimeout(() => updateState({ showLogs: false }), 2500);
       return () => clearTimeout(timer);
     }
   }, [state.results]);
 
   return (
     <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col overflow-hidden font-sans antialiased">
-
       {/* ================= HEADER ================= */}
       <header className="bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800 shadow-2xl">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-
             <h1 className="text-xl font-bold text-zinc-100 tracking-tight">
               Power Curve Input Generator
             </h1>
 
             <div className="flex items-center gap-4">
-
               {/* Selected Count */}
               <div className="bg-zinc-800/50 px-4 py-2 rounded-lg border border-zinc-700">
                 <div className="flex items-center gap-2">
@@ -91,9 +85,7 @@ export default function Home() {
               {/* Process Button */}
               <Button
                 onClick={handleProcessFiles}
-                disabled={
-                  state.processing || state.selectedFiles.length === 0
-                }
+                disabled={state.processing || state.selectedFiles.length === 0}
                 className="px-6 py-3 font-semibold"
               >
                 <Icon path="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -127,7 +119,6 @@ export default function Home() {
 
       {/* ================= BODY ================= */}
       <div className="flex flex-1 overflow-hidden">
-
         {/* Sidebar */}
         <FileList
           files={state.files}
@@ -143,16 +134,13 @@ export default function Home() {
         {/* Main */}
         <main className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto p-8">
-
             {/* Error */}
             {state.error && (
               <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-5">
                 <div className="font-semibold text-red-300 mb-1">
                   Processing Error
                 </div>
-                <div className="text-sm text-red-400">
-                  {state.error}
-                </div>
+                <div className="text-sm text-red-400">{state.error}</div>
               </div>
             )}
 
@@ -175,29 +163,33 @@ export default function Home() {
             )}
 
             {/* Preview */}
-            {!state.results &&
-              !state.processing &&
-              state.activeFile && (
-                <div>
-                  <h2 className="text-xl font-semibold text-zinc-100 mb-6">
-                    File Preview
-                  </h2>
+            {!state.results && !state.processing && state.activeFile && (
+              <div>
+                <h2 className="text-xl font-semibold text-zinc-100 mb-6">
+                  File Preview
+                </h2>
 
-                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
-                    <div className="space-y-4">
-                      <InfoRow label="File Name" value={state.activeFile.name} mono />
-                      <InfoRow
-                        label="File Size"
-                        value={`${(state.activeFile.size / 1024).toFixed(2)} KB`}
-                      />
-                      <InfoRow
-                        label="File Type"
-                        value={state.activeFile.type || "application/octet-stream"}
-                      />
-                    </div>
+                <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-6">
+                  <div className="space-y-4">
+                    <InfoRow
+                      label="File Name"
+                      value={state.activeFile.name}
+                      mono
+                    />
+                    <InfoRow
+                      label="File Size"
+                      value={`${(state.activeFile.size / 1024).toFixed(2)} KB`}
+                    />
+                    <InfoRow
+                      label="File Type"
+                      value={
+                        state.activeFile.type || "application/octet-stream"
+                      }
+                    />
                   </div>
                 </div>
-              )}
+              </div>
+            )}
           </div>
 
           {/* ================= LOGS ================= */}
@@ -213,14 +205,15 @@ export default function Home() {
                 </h3>
 
                 <button
-                  onClick={() =>
-                    updateState({ showLogs: !state.showLogs })
-                  }
+                  onClick={() => updateState({ showLogs: !state.showLogs })}
+                  aria-expanded={state.showLogs}
                   className="text-zinc-400 hover:text-zinc-200"
                 >
                   <Icon
                     path="M19 9l-7 7-7-7"
-                    className={`${state.showLogs ? "" : "rotate-180"}`}
+                    className={`transition-transform duration-300 ${
+                      state.showLogs ? "" : "rotate-180"
+                    }`}
                   />
                 </button>
               </div>
@@ -234,8 +227,8 @@ export default function Home() {
                         log.type === "error"
                           ? "bg-red-500/10 text-red-300"
                           : log.type === "success"
-                          ? "bg-emerald-500/10 text-emerald-300"
-                          : "bg-zinc-800 text-zinc-300"
+                            ? "bg-emerald-500/10 text-emerald-300"
+                            : "bg-zinc-800 text-zinc-300"
                       }`}
                     >
                       [{log.timestamp}] {log.message}
@@ -256,14 +249,8 @@ export default function Home() {
 function InfoRow({ label, value, mono }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-zinc-700 last:border-0">
-      <span className="text-sm font-medium text-zinc-300">
-        {label}
-      </span>
-      <span
-        className={`text-sm text-zinc-100 ${
-          mono ? "font-mono" : ""
-        }`}
-      >
+      <span className="text-sm font-medium text-zinc-300">{label}</span>
+      <span className={`text-sm text-zinc-100 ${mono ? "font-mono" : ""}`}>
         {value}
       </span>
     </div>
