@@ -210,24 +210,22 @@ export async function processOutFiles(files, airDensity = 1.225, onProgress) {
       // if (!meanWindSpeed) continue;
 
       const result = {
-        windSpeedGroup: getGroupKey(file.name),
         fileName: file.name,
+        windSpeed: aggregated.windSpeed,
         power: aggregated.power,
         torque: aggregated.torque,
         genSpeed: aggregated.genSpeed,
         cp: aggregated.cp,
         ct: aggregated.ct,
-        windSpeed: aggregated.windSpeed,
         bladePitch1: aggregated.bladePitch1,
         bladePitch2: aggregated.bladePitch2,
         bladePitch3: aggregated.bladePitch3,
         "RtArea(m2)": aggregated.rtArea,
       };
 
-
       allFileResults.push(result);
       if (onProgress) {
-        const percent = Math.round(((i + 1) / outFiles.length) * 80);
+        const percent = Math.round(((i + 1) / outFiles.length) * 100);
         onProgress(i + 1, outFiles.length, percent, file.name);
       }
     } catch (err) {
@@ -251,10 +249,11 @@ export async function processOutFiles(files, airDensity = 1.225, onProgress) {
   // ===== GROUPING =====
   const groups = {};
   allFileResults.forEach((result) => {
-    if (!groups[result.windSpeedGroup]) {
-      groups[result.windSpeedGroup] = [];
+    const groupKey = getGroupKey(result.fileName);
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
     }
-    groups[result.windSpeedGroup].push(result);
+    groups[groupKey].push(result);
   });
 
   const powerCurve = Object.entries(groups).map(([group, results]) => {
@@ -284,9 +283,7 @@ export async function processOutFiles(files, airDensity = 1.225, onProgress) {
     Power: row.power,
   }));
 
-  if (onProgress) {
-    onProgress(outFiles.length, outFiles.length, 100, "Complete");
-  }
+  if (onProgress) onProgress(outFiles.length, outFiles.length, 100, "Complete");
 
   return {
     filesProcessed: allFileResults.length,
@@ -304,3 +301,4 @@ export async function processOutFiles(files, airDensity = 1.225, onProgress) {
 }
 
 export const processFilesInBrowser = processOutFiles;
+

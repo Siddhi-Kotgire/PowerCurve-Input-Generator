@@ -30,7 +30,7 @@ export const useFileProcessing = (initialState) => {
   };
 
   const now = new Date();
-  const formattedDate = now.toISOString().split("T")[0]; 
+  const formattedDate = now.toISOString().split("T")[0];
 
   const handleDownload = (format) => {
     if (!state.results) return;
@@ -124,26 +124,41 @@ export const useFileProcessing = (initialState) => {
     try {
       updateState({
         processing: true,
-        progress: 5,
-        currentStep: "Reading files...",
+        progress: 0,
+        currentStep: `Processing 0/${state.selectedFiles.length}`,
         error: null,
       });
 
       addLog("Started processing files");
 
+      // const result = await processOutFiles(
+      //   state.selectedFiles,
+      //   // state.airDensity,
+      //   (processed, total, percent, fileName) => {
+      //     updateState({
+      //       progress: percent,
+      //       currentStep: fileName
+      //         ? `Processing ${processed}/${total}: ${fileName}`
+      //         : `Processing ${processed}/${total}`,
+      //     });
+      //   },
+      // );
+
       const result = await processOutFiles(
         state.selectedFiles,
-        // state.airDensity,
+        undefined, // or state.airDensity / 1.225
         (processed, total, percent, fileName) => {
           updateState({
             progress: percent,
-            currentStep: fileName || `Processing ${processed}/${total}`,
+            currentStep: fileName
+              ? `Processing ${processed}/${total}: ${fileName}`
+              : `Processing ${processed}/${total}`,
           });
         },
       );
 
       updateState({
-        progress: 85,
+        progress: 100,
         currentStep: "Generating export files...",
       });
 
