@@ -124,7 +124,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
                   className="hover:bg-zinc-700/30 transition-colors"
                 >
                   <TableCell bold>{row.windSpeed.toFixed(2)}</TableCell>
-                  <TableCell>{formatNumber(row.Power, 2)}</TableCell>
+                  <TableCell>{formatNumber(row.power, 2)}</TableCell>
                   <TableCell>{row.torque.toFixed(4)}</TableCell>
                   <TableCell>{row.genSpeed.toFixed(4)}</TableCell>
                   <TableCell>{row.cp.toFixed(6)}</TableCell>

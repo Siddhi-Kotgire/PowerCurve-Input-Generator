@@ -5,14 +5,20 @@ export const generateExports = ({
   powerCurve = [],
   processedAirDensity,
 }) => {
-  const individualSeedsCSV = convertToCSV(allFileResults);
-  const powerCurveCSV = convertToCSV(powerCurve);
+  const sanitizedAllFileResults = removeRotorAreaColumns(allFileResults);
+  const sanitizedPowerCurve = removeRotorAreaColumns(powerCurve);
 
-  const individualSeedsFW = convertToFixedWidth(allFileResults);
-  const powerCurveFW = convertToFixedWidth(powerCurve);
+  const individualSeedsCSV = convertToCSV(sanitizedAllFileResults);
+  const powerCurveCSV = convertToCSV(sanitizedPowerCurve);
 
-  const individualSeedsXLSX = generateXLSXBase64(allFileResults, "All Seeds");
-  const powerCurveXLSX = generateXLSXBase64(powerCurve, "Power Curve");
+  const individualSeedsFW = convertToFixedWidth(sanitizedAllFileResults);
+  const powerCurveFW = convertToFixedWidth(sanitizedPowerCurve);
+
+  const individualSeedsXLSX = generateXLSXBase64(
+    sanitizedAllFileResults,
+    "All Seeds",
+  );
+  const powerCurveXLSX = generateXLSXBase64(sanitizedPowerCurve, "Power Curve");
 
   return {
     processedAirDensity,
@@ -23,6 +29,24 @@ export const generateExports = ({
     individualSeedsXLSX,
     powerCurveXLSX,
   };
+};
+
+const removeRotorAreaColumns = (data) =>
+  data.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).filter(([key]) => !isRotorAreaKey(key)),
+    ),
+  );
+
+const isRotorAreaKey = (key) => {
+  if (!key) return false;
+  const normalizedKey = String(key).trim().toLowerCase();
+  return (
+    normalizedKey === "rtarea(m2)" ||
+    normalizedKey === "rotor area" ||
+    normalizedKey === "rotor_area" ||
+    normalizedKey === "rotorarea"
+  );
 };
 
 const convertToCSV = (data) => {

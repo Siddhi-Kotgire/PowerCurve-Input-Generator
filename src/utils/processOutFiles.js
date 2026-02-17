@@ -61,6 +61,20 @@ function calculateMean(arr) {
   return arr.reduce((sum, val) => sum + val, 0) / arr.length;
 }
 
+function roundTo(value, decimals = 4) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return value;
+  return Number(value.toFixed(decimals));
+}
+
+function roundNumericFields(obj, decimals = 4) {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [
+      key,
+      typeof value === "number" ? roundTo(value, decimals) : value,
+    ]),
+  );
+}
+
 function getGroupKey(fileName) {
   const lowerName = fileName.toLowerCase();
   if (lowerName.includes("_seed")) {
@@ -103,7 +117,7 @@ export async function processOutFiles(
       const meanWindSpeed = calculateMean(windSpeeds);
       if (!meanWindSpeed) continue;
 
-      const result = {
+      const result = roundNumericFields({
         windSpeedGroup: getGroupKey(file.name),
         fileName: file.name,
         power: calculateMean(data.map((r) => r[COLUMNS.genPwr] || 0)),
@@ -122,7 +136,7 @@ export async function processOutFiles(
           data.map((r) => r[COLUMNS.bladePitch3] || 0),
         ),
         "RtArea(m2)": calculateMean(data.map((r) => r[COLUMNS.rtArea] || 0)),
-      };
+      });
 
       allFileResults.push(result);
       if (onProgress) {
@@ -139,12 +153,12 @@ export async function processOutFiles(
   }
 
   // ===== GLOBAL STATS =====
-  const globalRtAreaMean = calculateMean(
-    allFileResults.map((r) => r["RtArea(m2)"]),
+  const globalRtAreaMean = roundTo(
+    calculateMean(allFileResults.map((r) => r["RtArea(m2)"])),
   );
 
-  const globalRtAreaMax = Math.max(
-    ...allFileResults.map((r) => r["RtArea(m2)"]),
+  const globalRtAreaMax = roundTo(
+    Math.max(...allFileResults.map((r) => r["RtArea(m2)"])),
   );
 
   // ===== GROUPING =====
@@ -158,9 +172,9 @@ export async function processOutFiles(
 
   const powerCurve = Object.entries(groups).map(([group, results]) => {
     const avgWindSpeed = calculateMean(results.map((r) => r.windSpeed));
-    const roundedWindSpeed = Math.round(avgWindSpeed * 2) / 2;
+    const roundedWindSpeed = roundTo(Math.round(avgWindSpeed * 2) / 2);
 
-    return {
+    return roundNumericFields({
       group,
       windSpeed: roundedWindSpeed,
       power: calculateMean(results.map((r) => r.power)),
@@ -172,16 +186,10 @@ export async function processOutFiles(
       bladePitch2: calculateMean(results.map((r) => r.bladePitch2)),
       bladePitch3: calculateMean(results.map((r) => r.bladePitch3)),
       "RtArea(m2)": calculateMean(results.map((r) => r["RtArea(m2)"])),
-    };
+    });
   });
 
   powerCurve.sort((a, b) => a.windSpeed - b.windSpeed);
-
-  // Keep compatibility with UI that reads `row.Power`.
-  const powerCurveWithLegacyKeys = powerCurve.map((row) => ({
-    ...row,
-    Power: row.power,
-  }));
 
   if (onProgress) {
     onProgress(outFiles.length, outFiles.length, 100, "Complete");
@@ -190,7 +198,7 @@ export async function processOutFiles(
   return {
     filesProcessed: allFileResults.length,
     allFileResults,
-    powerCurve: powerCurveWithLegacyKeys,
+    powerCurve,
     results: allFileResults,
     stats: {
       globalRtAreaMean,
