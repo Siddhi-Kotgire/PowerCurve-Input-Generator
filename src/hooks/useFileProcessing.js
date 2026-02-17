@@ -29,21 +29,24 @@ export const useFileProcessing = (initialState) => {
     }));
   };
 
+  const now = new Date();
+  const formattedDate = now.toISOString().split("T")[0]; 
+
   const handleDownload = (format) => {
     if (!state.results) return;
 
-    const { exports, processedAirDensity } = state.results;
+    const { exports } = state.results;
 
     switch (format) {
       case "csv":
         downloadFile(
           exports.individualSeedsCSV,
-          `all_seed_averages_${processedAirDensity}.csv`,
+          `all_seed_averages_${formattedDate}.csv`,
           "text/csv;charset=utf-8",
         );
         downloadFile(
           exports.powerCurveCSV,
-          `final_power_curve_${processedAirDensity}.csv`,
+          `final_power_curve_${formattedDate}.csv`,
           "text/csv;charset=utf-8",
         );
         addLog("Downloaded CSV files", "success");
@@ -52,12 +55,12 @@ export const useFileProcessing = (initialState) => {
       case "xlsx":
         downloadFile(
           exports.individualSeedsXLSX,
-          `all_seed_averages_${processedAirDensity}.xlsx`,
+          `all_seed_averages_${formattedDate}.xlsx`,
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         );
         downloadFile(
           exports.powerCurveXLSX,
-          `final_power_curve_${processedAirDensity}.xlsx`,
+          `final_power_curve_${formattedDate}.xlsx`,
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         );
         addLog("Downloaded XLSX files", "success");
@@ -67,12 +70,12 @@ export const useFileProcessing = (initialState) => {
       case "fw.txt":
         downloadFile(
           exports.individualSeedsFW,
-          `all_seed_averages_${processedAirDensity}.fw.txt`,
+          `all_seed_averages_${formattedDate}.fw.txt`,
           "text/plain;charset=utf-8",
         );
         downloadFile(
           exports.powerCurveFW,
-          `final_power_curve_${processedAirDensity}.fw.txt`,
+          `final_power_curve_${formattedDate}.fw.txt`,
           "text/plain;charset=utf-8",
         );
         addLog("Downloaded FW files", "success");
@@ -130,7 +133,7 @@ export const useFileProcessing = (initialState) => {
 
       const result = await processOutFiles(
         state.selectedFiles,
-        state.airDensity,
+        // state.airDensity,
         (processed, total, percent, fileName) => {
           updateState({
             progress: percent,
@@ -148,7 +151,7 @@ export const useFileProcessing = (initialState) => {
       const exports = generateExports({
         allFileResults: result.allFileResults,
         powerCurve: result.powerCurve,
-        processedAirDensity: state.airDensity,
+        // processedAirDensity: state.airDensity,
       });
 
       updateState({
@@ -159,7 +162,7 @@ export const useFileProcessing = (initialState) => {
           filesProcessed: result.filesProcessed,
           globalRtAreaMean: result.globalRtAreaMean,
           globalRtAreaMax: result.globalRtAreaMax,
-          processedAirDensity: state.airDensity,
+          // processedAirDensity: state.airDensity,
           exports,
         },
         processing: false,

@@ -12,14 +12,27 @@ export const generateExports = ({
     .map(removeDuplicatePowerKey)
     .map(formatNumericRow);
 
-  const individualSeedsCSV = convertToCSV(sanitizedAllFileResults);
+  const sortedAllFileResults = [...sanitizedAllFileResults].sort(
+    (a, b) =>
+      Number(a.windSpeed ?? a.WindSpeed) - Number(b.windSpeed ?? b.WindSpeed),
+  );
+  
+  // const sortByWindSpeed = (rows, windSpeedKey) => {
+  //   if (!windSpeedKey) return rows;
+  //   return [...rows].sort(
+  //     (a, b) =>
+  //       parseFloat(a[windSpeedKey] ?? 0) - parseFloat(b[windSpeedKey] ?? 0),
+  //   );
+  // };
+
+  const individualSeedsCSV = convertToCSV(sortedAllFileResults);
   const powerCurveCSV = convertToCSV(sanitizedPowerCurve);
 
-  const individualSeedsFW = convertToFixedWidth(sanitizedAllFileResults);
+  const individualSeedsFW = convertToFixedWidth(sortedAllFileResults);
   const powerCurveFW = convertToFixedWidth(sanitizedPowerCurve);
 
   const individualSeedsXLSX = generateXLSXBase64(
-    sanitizedAllFileResults,
+    sortedAllFileResults,
     "All Seeds",
   );
   const powerCurveXLSX = generateXLSXBase64(sanitizedPowerCurve, "Power Curve");

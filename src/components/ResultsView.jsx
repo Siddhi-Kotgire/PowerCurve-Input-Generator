@@ -48,7 +48,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
             />
           </div>
 
-          <div className="flex items-center gap-6 text-xs text-zinc-400 pt-3 border-t border-zinc-700/50">
+          {/* <div className="flex items-center gap-6 text-xs text-zinc-400 pt-3 border-t border-zinc-700/50">
             <span>{state.results?.filesProcessed} files processed</span>
             <span>{state.results?.powerCurve.length} wind speed groups</span>
             <span>
@@ -84,7 +84,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
               ).toFixed(4)}{" "}
               kW
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
