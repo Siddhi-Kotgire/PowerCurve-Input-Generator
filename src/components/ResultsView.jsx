@@ -31,11 +31,11 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
           </h3>
 
           <div className="grid grid-cols-4 gap-4 mb-3">
-            <StatCard
+            {/* <StatCard
               label="Air Density"
               value={state.airDensity}
               unit="kg/m³"
-            />
+            /> */}
             <StatCard
               label="RtArea Mean"
               value={state.results?.globalRtAreaMean?.toFixed(2) || "N/A"}

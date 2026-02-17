@@ -120,9 +120,9 @@ const InstructionSteps = ({ filesCount, selectedCount }) => {
               Pro Tip
             </h4>
             <p className="text-xs text-zinc-400">
-              You can use "Select All" button in the sidebar to quickly select
-              all uploaded files, or choose specific files for targeted
-              analysis.
+              You can use the &quot;Select All&quot; button in the sidebar to
+              quickly select all uploaded files, or choose specific files for
+              targeted analysis.
             </p>
           </div>
         </div>

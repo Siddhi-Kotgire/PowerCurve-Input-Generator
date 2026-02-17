@@ -29,7 +29,7 @@ export default function Home() {
 
   /* Auto-scroll logs */
   useEffect(() => {
-    if (state.showLogs) {
+    if (state.showLogs && state.logs.length > 0) {
       logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [state.logs, state.showLogs]);
@@ -40,7 +40,22 @@ export default function Home() {
       const timer = setTimeout(() => updateState({ showLogs: false }), 2500);
       return () => clearTimeout(timer);
     }
-  }, [state.results]);
+  }, [state.results, state.showLogs, state.logs.length, updateState]);
+
+  const latestLog = state.logs[state.logs.length - 1] || {};
+  const latestType =
+    latestLog.type === "error" || latestLog.type === "success"
+      ? latestLog.type
+      : "info";
+  const latestMessage = latestLog.message || "(no message)";
+  const latestTimestamp = latestLog.timestamp || "--:--:--";
+
+  const latestChipClasses =
+    latestType === "error"
+      ? "border-red-500/30 bg-red-500/10 text-red-300"
+      : latestType === "success"
+        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+        : "border-zinc-700 bg-zinc-800/80 text-zinc-300";
 
   return (
     <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col overflow-hidden font-sans antialiased">
@@ -195,19 +210,31 @@ export default function Home() {
           {/* ================= LOGS ================= */}
           {state.logs.length > 0 && (
             <div
-              className={`border-t border-zinc-800 bg-zinc-900/50 flex flex-col transition-all duration-300 ${
+              className={`border-t border-zinc-800 bg-zinc-900/60 flex flex-col transition-all duration-300 ${
                 state.showLogs ? "h-64" : "h-12"
               }`}
             >
-              <div className="px-6 py-3 border-b border-zinc-800 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-zinc-200 uppercase">
-                  Processing Logs
-                </h3>
+              <div className="px-6 h-12 border-b border-zinc-800 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex items-center gap-3">
+                  <h3 className="text-[11px] font-semibold tracking-[0.16em] text-zinc-200 uppercase">
+                    Processing Logs
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md border border-zinc-700 bg-zinc-800/80 text-zinc-300 font-mono">
+                    {state.logs.length}
+                  </span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-md border font-mono uppercase ${latestChipClasses}`}
+                  >
+                    {latestType}
+                  </span>
+                </div>
 
                 <button
                   onClick={() => updateState({ showLogs: !state.showLogs })}
+                  aria-controls="processing-logs-panel"
                   aria-expanded={state.showLogs}
-                  className="text-zinc-400 hover:text-zinc-200"
+                  aria-label={state.showLogs ? "Collapse logs" : "Expand logs"}
+                  className="text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <Icon
                     path="M19 9l-7 7-7-7"
@@ -218,21 +245,45 @@ export default function Home() {
                 </button>
               </div>
 
+              {!state.showLogs && (
+                <div className="px-6 py-2 text-xs font-mono text-zinc-400 truncate">
+                  [{latestTimestamp}] {latestMessage}
+                </div>
+              )}
+
               {state.showLogs && (
-                <div className="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs">
+                <div
+                  id="processing-logs-panel"
+                  role="log"
+                  aria-live="polite"
+                  className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5 font-mono text-xs"
+                >
                   {state.logs.map((log, i) => (
-                    <div
-                      key={i}
-                      className={`px-3 py-2 rounded ${
-                        log.type === "error"
+                    <article
+                      key={`${log.timestamp || "no-time"}-${i}`}
+                      className={`px-3 py-2 rounded-md border-l-2 ${
+                        (log.type || "info") === "error"
                           ? "bg-red-500/10 text-red-300"
-                          : log.type === "success"
+                          : (log.type || "info") === "success"
                             ? "bg-emerald-500/10 text-emerald-300"
-                            : "bg-zinc-800 text-zinc-300"
+                            : "bg-zinc-800/90 text-zinc-300"
+                      } ${
+                        (log.type || "info") === "error"
+                          ? "border-l-red-400"
+                          : (log.type || "info") === "success"
+                            ? "border-l-emerald-400"
+                            : "border-l-zinc-500"
                       }`}
                     >
-                      [{log.timestamp}] {log.message}
-                    </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-zinc-500 shrink-0">
+                          [{log.timestamp || "--:--:--"}]
+                        </span>
+                        <span className="break-words">
+                          {log.message || "(no message)"}
+                        </span>
+                      </div>
+                    </article>
                   ))}
                   <div ref={logsEndRef} />
                 </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { downloadFile } from "../utils/fileUtils";
 import { generateExports } from "@/utils/generateExports";
 import { processOutFiles } from "@/utils/processOutFiles";
@@ -6,8 +6,10 @@ import { processOutFiles } from "@/utils/processOutFiles";
 export const useFileProcessing = (initialState) => {
   const [state, setState] = useState(initialState);
 
-  const updateState = (updates) =>
-    setState((prev) => ({ ...prev, ...updates }));
+  const updateState = useCallback(
+    (updates) => setState((prev) => ({ ...prev, ...updates })),
+    [],
+  );
 
   const addLog = (message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
