@@ -5,8 +5,12 @@ export const generateExports = ({
   powerCurve = [],
   processedAirDensity,
 }) => {
-  const sanitizedAllFileResults = removeRotorAreaColumns(allFileResults);
-  const sanitizedPowerCurve = removeRotorAreaColumns(powerCurve);
+  const sanitizedAllFileResults = removeRotorAreaColumns(allFileResults)
+    .map(removeDuplicatePowerKey)
+    .map(formatNumericRow);
+  const sanitizedPowerCurve = removeRotorAreaColumns(powerCurve)
+    .map(removeDuplicatePowerKey)
+    .map(formatNumericRow);
 
   const individualSeedsCSV = convertToCSV(sanitizedAllFileResults);
   const powerCurveCSV = convertToCSV(sanitizedPowerCurve);
@@ -29,6 +33,28 @@ export const generateExports = ({
     individualSeedsXLSX,
     powerCurveXLSX,
   };
+};
+
+const MAX_DECIMALS = 4;
+
+const roundToDecimals = (value, decimals = MAX_DECIMALS) => {
+  if (typeof value !== "number" || Number.isNaN(value)) return value;
+  const factor = 10 ** decimals;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};
+
+const formatNumericRow = (row) =>
+  Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key, roundToDecimals(value)]),
+  );
+
+const removeDuplicatePowerKey = (row) => {
+  if (!row || typeof row !== "object") return row;
+  if (!Object.prototype.hasOwnProperty.call(row, "power")) return row;
+  if (!Object.prototype.hasOwnProperty.call(row, "Power")) return row;
+
+  const { Power, ...withoutLegacyPower } = row;
+  return withoutLegacyPower;
 };
 
 const removeRotorAreaColumns = (data) =>

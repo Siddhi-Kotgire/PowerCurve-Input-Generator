@@ -1,7 +1,7 @@
 import FormatDropdown from "./FormatDropdown";
 import { TableHeader, TableCell, StatCard } from "./common/Table";
 
-const formatNumber = (value, digits = 2) => {
+const formatNumber = (value, digits = 4) => {
   if (typeof value !== "number" || isNaN(value)) return "-";
   return value.toFixed(digits);
 };
@@ -38,12 +38,12 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
             /> */}
             <StatCard
               label="RtArea Mean"
-              value={state.results?.globalRtAreaMean?.toFixed(2) || "N/A"}
+              value={state.results?.globalRtAreaMean?.toFixed(4) || "N/A"}
               unit="m²"
             />
             <StatCard
               label="RtArea Max"
-              value={state.results?.globalRtAreaMax?.toFixed(2) || "N/A"}
+              value={state.results?.globalRtAreaMax?.toFixed(4) || "N/A"}
               unit="m²"
             />
           </div>
@@ -55,7 +55,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
               Min Speed:{" "}
               {Math.min(
                 ...state.results.powerCurve.map((r) => r.windSpeed),
-              ).toFixed(2)}{" "}
+              ).toFixed(4)}{" "}
               m/s
             </span>
             <span>
@@ -65,7 +65,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
                   (sum, r) => sum + r.windSpeed,
                   0,
                 ) / state.results.powerCurve.length
-              ).toFixed(2)}{" "}
+              ).toFixed(4)}{" "}
               m/s
             </span>
 
@@ -73,7 +73,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
               Max Speed:{" "}
               {Math.max(
                 ...state.results.powerCurve.map((r) => r.windSpeed),
-              ).toFixed(2)}{" "}
+              ).toFixed(4)}{" "}
               m/s
             </span>
 
@@ -81,7 +81,7 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
               Max Power:{" "}
               {Math.max(
                 ...state.results.powerCurve.map((r) => r.power),
-              ).toFixed(0)}{" "}
+              ).toFixed(4)}{" "}
               kW
             </span>
           </div>
@@ -123,12 +123,12 @@ const ResultsView = ({ state, updateState, toggleFormat, handleDownload }) => {
                   key={idx}
                   className="hover:bg-zinc-700/30 transition-colors"
                 >
-                  <TableCell bold>{row.windSpeed.toFixed(2)}</TableCell>
-                  <TableCell>{formatNumber(row.power, 2)}</TableCell>
+                  <TableCell bold>{row.windSpeed.toFixed(4)}</TableCell>
+                  <TableCell>{formatNumber(row.power, 4)}</TableCell>
                   <TableCell>{row.torque.toFixed(4)}</TableCell>
                   <TableCell>{row.genSpeed.toFixed(4)}</TableCell>
-                  <TableCell>{row.cp.toFixed(6)}</TableCell>
-                  <TableCell>{row.ct.toFixed(6)}</TableCell>
+                  <TableCell>{row.cp.toFixed(4)}</TableCell>
+                  <TableCell>{row.ct.toFixed(4)}</TableCell>
                   <TableCell>{row.bladePitch1.toFixed(4)}</TableCell>
                   <TableCell>{row.bladePitch2.toFixed(4)}</TableCell>
                   <TableCell>{row.bladePitch3.toFixed(4)}</TableCell>
