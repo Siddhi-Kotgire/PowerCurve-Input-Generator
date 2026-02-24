@@ -1,36 +1,152 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Power Curve Input Generator
+
+A browser-based Next.js app for processing FAST/OpenFAST-style `.out` files and generating power-curve deliverables in `CSV`, `XLSX`, and fixed-width text (`.fw.txt`) formats.
+
+## What This Project Does
+
+The app lets you upload a folder of simulation output files, select which files to include, and compute:
+
+- Per-file averaged metrics ("all seed averages")
+- Grouped and averaged power-curve rows
+
+Exports are generated client-side and downloaded directly in the browser.
+
+## Core Features
+
+- Folder upload and automatic `.out` filtering
+- Multi-file selection with select-all / deselect-all controls
+- Streaming file processing in the browser for large text files
+- Progress and processing logs UI
+- Aggregated outputs:
+  - Individual seed averages
+  - Final grouped power curve
+- Export formats:
+  - `CSV`
+  - `XLSX`
+  - `FW.TXT` (fixed-width text)
+
+## Data Processing Logic
+
+Processing is implemented in `src/utils/processOutFiles.js`.
+
+### Required/used columns
+
+The parser looks for these headers in `.out` files:
+
+- `Time`
+- `GenPwr`
+- `GenTq`
+- `GenSpeed`
+- `RtAeroCp`
+- `RtAeroCt`
+- `BldPitch1`
+- `BldPitch2`
+- `BldPitch3`
+- `WindHubVelX`
+- `WindHubVelY`
+- `WindHubVelZ`
+- `RtArea`
+
+### How values are computed
+
+- Each selected file is read as a stream and averaged row-by-row.
+- Wind speed is computed as vector magnitude:
+  `sqrt(WindHubVelX^2 + WindHubVelY^2 + WindHubVelZ^2)`
+- Files are grouped by filename prefix:
+  - If a name includes `_seed`, grouping key is everything before `_seed`.
+  - Otherwise, grouping key is the filename without extension.
+- Group wind speed is rounded to nearest `0.5`.
+- Group rows are sorted by wind speed.
+
+## Output Files
+
+When downloading a format, two files are generated:
+
+- `all_seed_averages_YYYY-MM-DD.<ext>`
+- `final_power_curve_YYYY-MM-DD.<ext>`
+
+Where `<ext>` is one of:
+
+- `csv`
+- `xlsx`
+- `fw.txt`
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- React 19
+- Tailwind CSS 4
+- `xlsx` for workbook generation
+- ESLint 9
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+
+### Install
+
+```bash
+npm install
+```
+
+### Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Production build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+### Lint
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+src/
+  app/
+    page.js                  # Main UI composition
+  hooks/
+    useFileProcessing.js     # State + orchestration for upload/process/export
+  utils/
+    processOutFiles.js       # Streaming parser + aggregation logic
+    generateExports.js       # CSV/XLSX/fixed-width generation
+    fileUtils.js             # Browser download helper
+  components/
+    FileList.jsx
+    ResultsView.jsx
+    FormatDropdown.jsx
+    InstructionSteps.jsx
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Netlify is preconfigured:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Build command: `npm run build`
+- Plugin: `@netlify/plugin-nextjs`
+
+See `netlify.toml`.
+
+## Notes and Limitations
+
+- Folder upload depends on browser support for directory selection (`webkitdirectory`).
+- Processing is fully client-side, so browser memory/CPU limits apply for very large batches.
+- Current export sanitization removes rotor area columns from exported datasets.
+
+## License
+
+Private project (no open-source license declared).
