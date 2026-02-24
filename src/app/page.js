@@ -64,7 +64,7 @@ export default function Home() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-zinc-100 tracking-tight">
-              Power Curve Input Generator
+              Power Curve Input Generator trail 2
             </h1>
 
             <div className="flex items-center gap-4">
