@@ -1,0 +1,42 @@
+name: Feature Branch Preview Deployment
+
+# Trigger on any feature branch
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Build the app
+      - name: Build app
+        run: npm run build  # For Next.js / React
+
+      # Step 5: Deploy to Vercel (Preview)
+      - name: Deploy Preview to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}       # Your Vercel personal token
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}     # For personal accounts: use your username
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} # Your project ID on Vercel
+          vercel-args: '--previews'                        # Ensure it’s a preview deployment
+          working-directory: '.'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
