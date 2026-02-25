@@ -1,6 +1,6 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
 import { useRef, useEffect } from "react";
@@ -10,7 +10,6 @@ import { INITIAL_STATE } from "../constants/initialState";
 import Icon from "../components/common/Icon";
 import Button from "../components/common/Button";
 import InstructionSteps from "../components/InstructionSteps";
-import FormatDropdown from "../components/FormatDropdown";
 import FileList from "../components/FileList";
 import ResultsView from "../components/ResultsView";
 
@@ -18,8 +17,8 @@ import "../styles/globals.css";
 
 export default function Home() {
   const logsEndRef = useRef(null);
-
- const { user } = useUser();
+  const router = useRouter();
+  const { isLoaded, isSignedIn, user } = useUser();
 
   const {
     state,
@@ -47,6 +46,26 @@ export default function Home() {
     }
   }, [state.results, state.showLogs, state.logs.length, updateState]);
 
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.replace("/auth/signin");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Loading state
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p>Loading session...</p>
+          {/* Optional: spinner */}
+          <div className="spinner mt-2"></div>
+        </div>
+      </div>
+    );
+  }
+
   const latestLog = state.logs[state.logs.length - 1] || {};
   const latestType =
     latestLog.type === "error" || latestLog.type === "success"
@@ -61,8 +80,6 @@ export default function Home() {
       : latestType === "success"
         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
         : "border-zinc-700 bg-zinc-800/80 text-zinc-300";
-  
-  if (!user) redirect("/auth/signin");
 
   return (
     <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col overflow-hidden font-sans antialiased">
