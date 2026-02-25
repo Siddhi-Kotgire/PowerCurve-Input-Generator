@@ -1,4 +1,7 @@
 "use client";
+import { useUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import { UserButton } from "@clerk/nextjs";
 
 import { useRef, useEffect } from "react";
 import { useFileProcessing } from "../hooks/useFileProcessing";
@@ -15,6 +18,8 @@ import "../styles/globals.css";
 
 export default function Home() {
   const logsEndRef = useRef(null);
+
+ const { user } = useUser();
 
   const {
     state,
@@ -56,6 +61,8 @@ export default function Home() {
       : latestType === "success"
         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
         : "border-zinc-700 bg-zinc-800/80 text-zinc-300";
+  
+  if (!user) redirect("/auth/signin");
 
   return (
     <div className="h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex flex-col overflow-hidden font-sans antialiased">
@@ -106,6 +113,8 @@ export default function Home() {
                 <Icon path="M13 10V3L4 14h7v7l9-11h-7z" />
                 {state.processing ? "Processing..." : "Generate Files"}
               </Button>
+
+              <UserButton afterSignOutUrl="/auth/signin" />
             </div>
           </div>
         </div>
